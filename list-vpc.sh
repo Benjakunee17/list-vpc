@@ -1,0 +1,202 @@
+#!/bin/bash
+
+# สร้างโฟลเดอร์ที่จะเก็บไฟล์ JSON และ CSV
+output_folder="output_vpc"
+mkdir -p "$output_folder"
+
+# สร้าง associative array เพื่อเก็บข้อมูล AWS accounts และ role ARNs
+declare -A accounts
+accounts=(
+  ["allonlineprd"]="arn:aws:iam::783212697677:role/AWSGSDevOpsRole"
+  ["awsgosoftbilling"]="arn:aws:iam::527942967264:role/AWSGSDevOpsRole"
+  ["awsambdev"]="arn:aws:iam::721063399527:role/AWSGSDevOpsRole"
+  ["cpcinthrsdev"]="arn:aws:iam::158994534266:role/AWSGSDevOpsRole"
+  ["cpcintchrsprd"]="arn:aws:iam::164440371756:role/AWSGSDevOpsRole"
+  ["cpastcm2cprd"]="arn:aws:iam::479888820877:role/AWSGSDevOpsRole"
+  # ["cparmsmopdev"]="arn:aws:iam::615472157248:role/AWSGSDevOpsRole"
+  # ["cparmsmopprd"]="arn:aws:iam::743222134828:role/AWSGSDevOpsRole"
+  # ["cparmspdmprd"]="arn:aws:iam::871132508325:role/AWSGSDevOpsRole"
+  # ["cparmspdmdev"]="arn:aws:iam::743504640254:role/AWSGSDevOpsRole"
+  # ["extawebdev"]="arn:aws:iam::224680537415:role/AWSGSDevOpsRole"
+  # ["cplwebsiteprd"]="arn:aws:iam::449640511956:role/AWSGSDevOpsRole"
+  # ["crmwebprd"]="arn:aws:iam::470952062366:role/AWSGSDevOpsRole"
+  # ["extawebprd"]="arn:aws:iam::150669592999:role/AWSGSDevOpsRole"
+  # ["pytppacprd"]="arn:aws:iam::462278964041:role/AWSGSDevOpsRole"
+  # ["gosmobmwsdev"]="arn:aws:iam::351543775186:role/AWSGSDevOpsRole"
+  # ["cpatplwebprd"]="arn:aws:iam::778196674017:role/AWSGSDevOpsRole"
+  # ["CRM-UDF-UDF-PRD"]="arn:aws:iam::162487768527:role/AWSGSDevOpsRole"
+  # ["cs-cs-lending-prd"]="arn:aws:iam::651682556595:role/AWSGSDevOpsRole"
+  # ["GSFullStack"]="arn:aws:iam::288822575862:role/AWSGSDevOpsRole"
+  # ["cpadeposadev"]="arn:aws:iam::597663535743:role/AWSGSDevOpsRole"
+  # ["cpamoblamdev"]="arn:aws:iam::332117390003:role/AWSGSDevOpsRole"
+  # ["cpawhooshuat"]="arn:aws:iam::488118434802:role/AWSGSDevOpsRole"
+  # ["AWSCCSPRD"]="arn:aws:iam::192490035075:role/AWSGSDevOpsRole"
+  # ["csposnssdev"]="arn:aws:iam::730478697685:role/AWSGSDevOpsRole"
+  # ["cprwebprd"]="arn:aws:iam::483296914682:role/AWSGSDevOpsRole"
+  # ["gs-sds-sss-dev"]="arn:aws:iam::971022779850:role/AWSGSDevOpsRole"
+  # ["awsgs-network-prd"]="arn:aws:iam::279761110119:role/AWSGSDevOpsRole"
+  # ["gosamzoneprd"]="arn:aws:iam::330000928584:role/AWSGSDevOpsRole"
+  # ["gosccsbotdev"]="arn:aws:iam::488118434802:role/AWSGSDevOpsRole"
+  # ["cpamob7appdev"]="arn:aws:iam::748635613318:role/AWSGSDevOpsRole"
+  # ["awsgs-workload-prd"]="arn:aws:iam::624745187498:role/AWSGSDevOpsRole"
+  # ["cpa-bps-bpm-prd"]="arn:aws:iam::898518305175:role/AWSGSDevOpsRole"
+  # ["cpainosim"]="arn:aws:iam::448730357228:role/AWSGSDevOpsRole"
+  # ["webcpacambodia"]="arn:aws:iam::800892605317:role/AWSGSDevOpsRole"
+  # ["awsallmembergame"]="arn:aws:iam::841464827920:role/AWSGSDevOpsRole"
+  # ["anmsenditnonprod"]="arn:aws:iam::263150548847:role/AWSGSDevOpsRole"
+  # ["cpa-cop-cos-prd"]="arn:aws:iam::307216033722:role/AWSGSDevOpsRole"
+  # ["24spocmm2sdev"]="arn:aws:iam::466874687812:role/AWSGSDevOpsRole"
+  # ["cpamobsthdev"]="arn:aws:iam::854476434382:role/AWSGSDevOpsRole"
+  # ["cpamoblamprd"]="arn:aws:iam::929686215362:role/AWSGSDevOpsRole"
+  # ["cpainosimprod"]="arn:aws:iam::68963276582:role/AWSGSDevOpsRole"
+  # ["webgosoft"]="arn:aws:iam::202358215813:role/AWSGSDevOpsRole"
+  # ["awscspoint"]="arn:aws:iam::419786972944:role/AWSGSDevOpsRole"
+  # ["cpamobnssdev"]="arn:aws:iam::595381316185:role/AWSGSDevOpsRole"
+  # ["cpamobsdldev"]="arn:aws:iam::915716207146:role/AWSGSDevOpsRole"
+  # ["cprcloudiotprd"]="arn:aws:iam::126584253575:role/AWSGSDevOpsRole"
+  # ["awsbravoprd"]="arn:aws:iam::444594271675:role/AWSGSDevOpsRole"
+  # ["vdmprd"]="arn:aws:iam::995797158960:role/AWSGSDevOpsRole"
+  # ["aws_cssupportdev"]="arn:aws:iam::203768743924:role/AWSGSDevOpsRole"
+  # ["awsalllivedev"]="arn:aws:iam::841939288951:role/AWSGSDevOpsRole"
+  # ["awscsmember"]="arn:aws:iam::605773681247:role/AWSGSDevOpsRole"
+  # ["shop24spocmm2sdev"]="arn:aws:iam::133475822432:role/AWSGSDevOpsRole"
+  # ["cpacopcosdev"]="arn:aws:iam::92500318531:role/AWSGSDevOpsRole"
+  # ["awsambprd"]="arn:aws:iam::466316074925:role/AWSGSDevOpsRole"
+  # ["cpastcaioprd"]="arn:aws:iam::302893928048:role/AWSGSDevOpsRole"
+  # ["gosmobdpfuat"]="arn:aws:iam::925843267752:role/AWSGSDevOpsRole"
+  # ["awscs"]="arn:aws:iam::739898434686:role/AWSGSDevOpsRole"
+  # ["cpamsmdcsprd"]="arn:aws:iam::300579597501:role/AWSGSDevOpsRole"
+  # ["awscslinecp"]="arn:aws:iam::242852680306:role/AWSGSDevOpsRole"
+  # ["cpa-hrm-pps-dev"]="arn:aws:iam::252752311565:role/AWSGSDevOpsRole"
+  # ["awscpruat"]="arn:aws:iam::517051072183:role/AWSGSDevOpsRole"
+  # ["cpamobnssuat"]="arn:aws:iam::937100349321:role/AWSGSDevOpsRole"
+  # ["CSDigitalLending"]="arn:aws:iam::551772272407:role/AWSGSDevOpsRole"
+  # ["allonlinedev"]="arn:aws:iam::580032728423:role/AWSGSDevOpsRole"
+  # ["cpawhooshdev"]="arn:aws:iam::76541732847:role/AWSGSDevOpsRole"
+  # ["awsamvprd"]="arn:aws:iam::779669411811:role/AWSGSDevOpsRole"
+  # ["cpacpedev"]="arn:aws:iam::579275034047:role/AWSGSDevOpsRole"
+  # ["awscpa"]="arn:aws:iam::852469049152:role/AWSGSDevOpsRole"
+  # ["vdmuat"]="arn:aws:iam::454633856753:role/AWSGSDevOpsRole"
+  # ["goslpsrwdprd"]="arn:aws:iam::693228411022:role/AWSGSDevOpsRole"
+  # ["cpall_iss"]="arn:aws:iam::807562755899:role/AWSGSDevOpsRole"
+  # ["cpamsmdcsdevqa"]="arn:aws:iam::340348191070:role/AWSGSDevOpsRole"
+  # ["cpastcstodev"]="arn:aws:iam::635702139295:role/AWSGSDevOpsRole"
+  # ["tel_research"]="arn:aws:iam::501361391094:role/AWSGSDevOpsRole"
+  # ["awsgs"]="arn:aws:iam::323436768889:role/AWSGSDevOpsRole"
+  # ["cpaslsolmprd"]="arn:aws:iam::123096512952:role/AWSGSDevOpsRole"
+  # ["cpalogwtsdev"]="arn:aws:iam::903451839038:role/AWSGSDevOpsRole"
+  # ["gosmobdpfdev"]="arn:aws:iam::670339347583:role/AWSGSDevOpsRole"
+  # ["gosmobdpfprd"]="arn:aws:iam::861016098913:role/AWSGSDevOpsRole"
+  # ["awsgs-network-nonprd"]="arn:aws:iam::576588705713:role/AWSGSDevOpsRole"
+  # ["awscsweb"]="arn:aws:iam::312042066235:role/AWSGSDevOpsRole"
+  # ["cpa-hrm-pps-prd"]="arn:aws:iam::704476380599:role/AWSGSDevOpsRole"
+  # ["aws_cspay"]="arn:aws:iam::18169263209:role/AWSGSDevOpsRole"
+  # ["cpacpeprd"]="arn:aws:iam::662706793304:role/AWSGSDevOpsRole"
+  # ["telUAT"]="arn:aws:iam::641027422378:role/AWSGSDevOpsRole"
+  # ["awsposonline-uat"]="arn:aws:iam::374086774338:role/AWSGSDevOpsRole"
+  # ["aieiamdtsprd"]="arn:aws:iam::425502730411:role/AWSGSDevOpsRole"
+  # ["awsposonline"]="arn:aws:iam::313760071080:role/AWSGSDevOpsRole"
+  # ["cpamobsdlprd"]="arn:aws:iam::351736453330:role/AWSGSDevOpsRole"
+  # ["cpastcaiodev"]="arn:aws:iam::129621092582:role/AWSGSDevOpsRole"
+  # ["cpaslsolmdev"]="arn:aws:iam::846658240562:role/AWSGSDevOpsRole"
+  # ["cpaonlshadev"]="arn:aws:iam::802791533053:role/AWSGSDevOpsRole"
+  # ["awsbravo"]="arn:aws:iam::709762057910:role/AWSGSDevOpsRole"
+  # ["awspimmooc"]="arn:aws:iam::717994841824:role/AWSGSDevOpsRole"
+  # ["24SP-OOL-OOL-PRD"]="arn:aws:iam::448342671352:role/AWSGSDevOpsRole"
+  # ["cpacaiprd"]="arn:aws:iam::361369810267:role/AWSGSDevOpsRole"
+  # ["cpaonlshaprd"]="arn:aws:iam::930149996980:role/AWSGSDevOpsRole"
+  # ["gosccsbotprd"]="arn:aws:iam::316161040613:role/AWSGSDevOpsRole"
+  # ["awsgs-security"]="arn:aws:iam::458926245373:role/AWSGSDevOpsRole"
+  # ["AWSCCSDEV"]="arn:aws:iam::804297713903:role/AWSGSDevOpsRole"
+  # ["awsgs-workload-nonprd"]="arn:aws:iam::959817607905:role/AWSGSDevOpsRole"
+  # ["gosamzmbsprd"]="arn:aws:iam::432701674407:role/AWSGSDevOpsRole"
+  # ["allwin-prd"]="arn:aws:iam::517016654139:role/AWSGSDevOpsRole"
+  # ["shop24spocmm2sprd"]="arn:aws:iam::727383623379:role/AWSGSDevOpsRole"
+  # ["cspaymobileprd"]="arn:aws:iam::407788572434:role/AWSGSDevOpsRole"
+  # ["cpamob7appprd"]="arn:aws:iam::365375654640:role/AWSGSDevOpsRole"
+  # ["goslpsrwddev"]="arn:aws:iam::851763887212:role/AWSGSDevOpsRole"
+  # ["awscpaapm"]="arn:aws:iam::777071947596:role/AWSGSDevOpsRole"
+  # ["awssdsprd"]="arn:aws:iam::298214330175:role/AWSGSDevOpsRole"
+  # ["awsbisertis"]="arn:aws:iam::58291738748:role/AWSGSDevOpsRole"
+  # ["awscsdnp"]="arn:aws:iam::323208480132:role/AWSGSDevOpsRole"
+  # ["cpamobnssprd"]="arn:aws:iam::885502103456:role/AWSGSDevOpsRole"
+  # ["aws_pime-learning"]="arn:aws:iam::623379020241:role/AWSGSDevOpsRole"
+  # ["cspaymobiledev"]="arn:aws:iam::416360889898:role/AWSGSDevOpsRole"
+  # ["awsstorehub-prd"]="arn:aws:iam::502341550159:role/AWSGSDevOpsRole"
+  # ["cpatplwebdev"]="arn:aws:iam::906234908360:role/AWSGSDevOpsRole"
+  # ["awsnetworking"]="arn:aws:iam::858418815190:role/AWSGSDevOpsRole"
+  # ["awscsspprd"]="arn:aws:iam::183599471253:role/AWSGSDevOpsRole"
+  # ["cpawhooshprd"]="arn:aws:iam::297817208467:role/AWSGSDevOpsRole"
+  # ["awscprtruevending"]="arn:aws:iam::835283350046:role/AWSGSDevOpsRole"
+  # ["cpastcstoprd"]="arn:aws:iam::786990075948:role/AWSGSDevOpsRole"
+  # ["cpamlpmlsdev"]="arn:aws:iam::827211069713:role/AWSGSDevOpsRole"
+  # ["cpa-bps-bpm-dev"]="arn:aws:iam::98605909787:role/AWSGSDevOpsRole"
+  # ["cscoucinprd"]="arn:aws:iam::762211578631:role/AWSGSDevOpsRole"
+  # ["cpalogwtsprd"]="arn:aws:iam::559386985737:role/AWSGSDevOpsRole"
+  # ["awscsorder"]="arn:aws:iam::746828823569:role/AWSGSDevOpsRole"
+  # ["awscspay_prd"]="arn:aws:iam::709046253722:role/AWSGSDevOpsRole"
+  # ["awspdpa2"]="arn:aws:iam::978740250822:role/AWSGSDevOpsRole"
+  # ["allmobiledev"]="arn:aws:iam::244611107336:role/AWSGSDevOpsRole"
+  # ["cscouloaprd"]="arn:aws:iam::265370425260:role/AWSGSDevOpsRole"
+  # ["cs-cs-csbi-dev"]="arn:aws:iam::129643845700:role/AWSGSDevOpsRole"
+  # ["csskyprd"]="arn:aws:iam::400702377733:role/AWSGSDevOpsRole"
+  # ["ALL_Mobile"]="arn:aws:iam::552208419250:role/AWSGSDevOpsRole"
+  # ["Amazon_7-11Web"]="arn:aws:iam::662670490345:role/AWSGSDevOpsRole"
+  # ["AWS_CPA_PRD"]="arn:aws:iam::502536796070:role/AWSGSDevOpsRole"
+  # ["awscpa_etaxprd"]="arn:aws:iam::673534047976:role/AWSGSDevOpsRole"
+  # ["CAI_AWS"]="arn:aws:iam::868301546053:role/AWSGSDevOpsRole"
+  # ["cpacorpwebprd"]="arn:aws:iam::487739093179:role/AWSGSDevOpsRole"
+  # ["cpacpestaging"]="arn:aws:iam::528155182469:role/AWSGSDevOpsRole"
+  # ["cpaeljeljdev"]="arn:aws:iam::387558870562:role/AWSGSDevOpsRole"
+  # ["cpaeljeljprd"]="arn:aws:iam::496347789614:role/AWSGSDevOpsRole"
+  # ["cpa-hrm-pms-dev"]="arn:aws:iam::746317425807:role/AWSGSDevOpsRole"
+  # ["cpa-hrm-pms-prd"]="arn:aws:iam::904730724339:role/AWSGSDevOpsRole"
+  # ["cpaiammadprd"]="arn:aws:iam::556913562934:role/AWSGSDevOpsRole"
+  # ["cpapsppspdev"]="arn:aws:iam::073372103043:role/AWSGSDevOpsRole"
+  # ["cpapsppspprd"]="arn:aws:iam::355307843529:role/AWSGSDevOpsRole"
+  # ["Amazon_CPR"]="arn:aws:iam::747270180823:role/AWSGSDevOpsRole"
+  # ["Amazon_CPR_DEV"]="arn:aws:iam::366696866392:role/AWSGSDevOpsRole"
+  # ["awstransittest"]="arn:aws:iam::794856495338:role/AWSGSDevOpsRole"
+  # ["gosmobmwsprd"]="arn:aws:iam::421227874694:role/AWSGSDevOpsRole"
+
+  # เพิ่ม AWS accounts และ role ARNs เพิ่มเติมตามต้องการ
+)
+
+# สร้างไฟล์ CSV สำหรับรวมข้อมูล
+ec2_instances_list="$output_folder/all_accounts_vpc.csv"
+echo "AccountName,VpcId" > "$ec2_instances_list"
+
+# วนลูปผ่านทุก AWS account
+for account in "${!accounts[@]}"; do
+  # เรียก AssumeRole เพื่อขอสิทธิ์การเข้าถึงใน AWS account นั้น ๆ
+  credentials=$(aws sts assume-role --role-arn "${accounts[$account]}" --role-session-name "VPCListSession" --profile awsgs-iam-organization)
+
+  # check สิทธิ์ AssumeRole แต่ละ account
+  if [ $? -ne 0 ]; then
+    echo "Failed to assume role for account: $account"
+    continue
+  fi
+
+  # ดึงข้อมูลทุก EC2 instance 
+  EC2=$(AWS_ACCESS_KEY_ID="${credentials[AccessKeyId]}" AWS_SECRET_ACCESS_KEY="${credentials[SecretAccessKey]}" AWS_SESSION_TOKEN="${credentials[SessionToken]}" aws ec2 describe-vpcs --profile "$account" --output json)
+
+  # สร้างชื่อไฟล์ JSON จากชื่อ AWS account
+  output_file="$output_folder/$account-vpc.json"
+
+  # Export ผลลัพธ์เป็นไฟล์ JSON
+  echo "$EC2" > "$output_file"
+
+  # Convert JSON to CSV using jq and awk
+  jq -r --arg account_name "$account" '.Vpcs[] | [$account_name, .VpcId] | @csv' "$output_file" | awk 'BEGIN {print "AccountName,VpcId"} {print}' >> "$ec2_instances_list" || {
+    echo "Error converting JSON to CSV in account: $account"
+    continue
+  }
+
+  # แสดงผลลัพธ์
+  echo "EC2 in AWS Account: $account"
+  echo "Exported JSON to: $output_file"
+  echo "Exported CSV to: ${output_file%.json}.csv"
+done
+
+# แสดงข้อมูลทั้งหมด
+echo "All EC2 instances exported to: $ec2_instances_list"
